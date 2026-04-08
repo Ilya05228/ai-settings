@@ -21,6 +21,8 @@ ai-settings: команды
 Примечания:
   - метаданные плагина: plugins/<name>/plugin.json
   - описание плагина: plugins/<name>/description.md (ручной файл)
+  - install не запускает sync-all; перед установкой выполни ./commands sync-all,
+    если нужны свежие копии внешних плагинов в plugins/<name>/
 EOF
 }
 
@@ -159,8 +161,6 @@ install_to() {
   [[ -n "$dest" && -n "$plugins" ]] || die "install requires --dest and --plugins"
 
   mkdir -p "$dest/skills" "$dest/agents"
-
-  "$ROOT/commands" sync-all
 
   IFS=',' read -r -a list <<<"$plugins"
   for plugin in "${list[@]}"; do
