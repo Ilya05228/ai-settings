@@ -1,0 +1,71 @@
+{
+  "version": 1,
+  "description": "External upstream registry for ai-settings. sync/purge/install read this file.",
+  "upstreams": {
+    "anthropics-skills": {
+      "type": "git",
+      "url": "https://github.com/anthropics/skills.git",
+      "ref": "main",
+      "provides": [
+        { "plugin": "docx", "path": "skills/docx" },
+        { "plugin": "pdf", "path": "skills/pdf" },
+        { "plugin": "pptx", "path": "skills/pptx" },
+        { "plugin": "xlsx", "path": "skills/xlsx" },
+        { "plugin": "mcp-builder", "path": "skills/mcp-builder" },
+        { "plugin": "skill-creator", "path": "skills/skill-creator" },
+        { "plugin": "frontend-design", "path": "skills/frontend-design" }
+      ]
+    },
+    "superpowers": {
+      "type": "git",
+      "url": "https://github.com/obra/superpowers.git",
+      "ref": "main",
+      "provides": [
+        { "plugin": "superpowers", "path": "skills", "dest": "skills/superpowers" },
+        { "plugin": "superpowers", "path": "agents", "dest": "agents/superpowers" },
+        { "plugin": "superpowers", "path": "hooks", "dest": "hooks/superpowers" },
+        { "plugin": "superpowers", "path": "docs", "dest": "docs/superpowers" },
+        { "plugin": "superpowers", "path": "commands", "dest": "commands/superpowers" }
+      ]
+    },
+    "get-shit-done": {
+      "type": "git",
+      "url": "https://github.com/gsd-build/get-shit-done.git",
+      "ref": "main",
+      "provides": [
+        { "plugin": "get-shit-done", "path": "skills", "dest": "skills/gsd" },
+        { "plugin": "get-shit-done", "path": "agents", "dest": "agents/gsd" },
+        { "plugin": "get-shit-done", "path": "hooks", "dest": "hooks/gsd" },
+        { "plugin": "get-shit-done", "path": "docs", "dest": "docs/gsd" },
+        { "plugin": "get-shit-done", "path": "commands", "dest": "commands/gsd" }
+      ]
+    },
+    "humanizer": {
+      "type": "git",
+      "url": "https://github.com/blader/humanizer.git",
+      "ref": "main",
+      "provides": [{ "plugin": "humanizer", "path": ".", "dest": "skills/humanizer" }]
+    }
+  },
+  "externalPaths": [
+    "plugins/docx/skills/docx",
+    "plugins/pdf/skills/pdf",
+    "plugins/pptx/skills/pptx",
+    "plugins/xlsx/skills/xlsx",
+    "plugins/mcp-builder/skills/mcp-builder",
+    "plugins/skill-creator/skills/skill-creator",
+    "plugins/frontend-design/skills/frontend-design",
+    "plugins/superpowers/skills/superpowers",
+    "plugins/superpowers/agents/superpowers",
+    "plugins/superpowers/hooks/superpowers",
+    "plugins/superpowers/docs/superpowers",
+    "plugins/superpowers/commands/superpowers",
+    "plugins/get-shit-done/skills/gsd",
+    "plugins/get-shit-done/agents/gsd",
+    "plugins/get-shit-done/hooks/gsd",
+    "plugins/get-shit-done/docs/gsd",
+    "plugins/get-shit-done/commands/gsd",
+    "plugins/humanizer/skills/humanizer"
+  ]
+}
+

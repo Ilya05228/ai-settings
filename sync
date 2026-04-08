@@ -1,0 +1,312 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "$0")" && pwd)"
+cd "$ROOT"
+
+echo "== workspace =="
+TMP="$(mktemp -d)"
+trap 'rm -rf "$TMP"' EXIT
+
+echo "== purge external (pre-sync) =="
+bash "$ROOT/purge-external" >/dev/null
+
+ensure_plugin_layout() {
+  local name="$1"
+  mkdir -p \
+    "$ROOT/plugins/$name/skills" \
+    "$ROOT/plugins/$name/agents" \
+    "$ROOT/plugins/$name/rules" \
+    "$ROOT/plugins/$name/hooks" \
+    "$ROOT/plugins/$name/docs" \
+    "$ROOT/plugins/$name/mcp"
+}
+
+write_file_if_missing() {
+  local path="$1"
+  if [[ -f "$path" ]]; then
+    return 0
+  fi
+  mkdir -p "$(dirname "$path")"
+  cat >"$path"
+}
+
+write_plugin_md_if_missing() {
+  local name="$1"
+  local md="$ROOT/plugins/$name/PLUGIN.md"
+  if [[ ! -f "$md" ]]; then
+    cat >"$md" <<EOF
+## $name
+
+Универсальный плагин-пак: может содержать \`skills/\`, \`agents/\`, \`rules/\`, \`hooks/\`, \`docs/\`, \`mcp/\`.
+EOF
+  fi
+}
+
+echo "== fetch anthropics/skills =="
+git clone --depth 1 https://github.com/anthropics/skills.git "$TMP/skills"
+
+echo "== ensure plugin folders =="
+for p in docx xlsx pptx pdf superpowers mcp-builder skill-creator frontend-design humanizer get-shit-done research code-simplifier code-review security-guidance; do
+  ensure_plugin_layout "$p"
+  write_plugin_md_if_missing "$p"
+done
+
+echo "== seed universal plugin content (generated if missing) =="
+
+# research
+write_file_if_missing "$ROOT/plugins/research/PLUGIN.md" <<'EOF'
+## research
+
+Универсальный “research pack” для поиска/документации/браузинга.
+
+Генерируется `./sync` (только если файлов не было).
+EOF
+
+write_file_if_missing "$ROOT/plugins/research/rules/research.md" <<'EOF'
+## Research rules
+
+- Всегда давай ссылки на источники (если утверждение зависит от внешней инфы).
+- Разделяй факты и предположения.
+- Если есть варианты — перечисляй 2-3 и почему.
+- Если нужны данные/файлы от пользователя — проси конкретно.
+EOF
+
+write_file_if_missing "$ROOT/plugins/research/agents/researcher.md" <<'EOF'
+---
+name: researcher
+description: Web/doc research + synthesis with citations.
+---
+
+You are a research agent. Produce concise, high-signal answers.
+When referencing external info, include the source URL(s).
+EOF
+
+write_file_if_missing "$ROOT/plugins/research/mcp/mcp.json" <<'EOF'
+{
+  "mcpServers": {
+    "browser-search": {
+      "command": "npx",
+      "args": ["-y", "@playwright/mcp@latest"]
+    },
+    "context7": {
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp@latest"],
+      "env": {
+        "CONTEXT7_API_KEY": "${env:CONTEXT7_API_KEY}"
+      }
+    },
+    "duckduckgo": {
+      "command": "npx",
+      "args": ["-y", "duckduckgo-mcp-server"]
+    }
+  }
+}
+EOF
+
+# code-simplifier
+write_file_if_missing "$ROOT/plugins/code-simplifier/PLUGIN.md" <<'EOF'
+## code-simplifier
+
+Источник (как Claude plugin): `https://claude.com/plugins/code-simplifier`
+
+В этой репе это **универсальный пак** (agents/rules/hooks/docs). Контент генерится `./sync` (если отсутствует),
+а дальше ты можешь донастраивать под свой стиль.
+EOF
+
+write_file_if_missing "$ROOT/plugins/code-simplifier/agents/code-simplifier.md" <<'EOF'
+---
+name: code-simplifier
+description: Simplify recently changed code without behavior changes.
+---
+
+You review diffs and recently modified files and propose refactors that:
+- preserve behavior
+- reduce complexity and nesting
+- improve naming and structure
+- keep formatting consistent with the codebase
+EOF
+
+write_file_if_missing "$ROOT/plugins/code-simplifier/rules/simplify.md" <<'EOF'
+## Simplification rules
+
+- Не меняй поведение.
+- Не меняй публичные API без причины.
+- Если не уверен — оставь как есть и объясни риск.
+- Старайся делать маленькие, локальные изменения.
+EOF
+
+# code-review
+write_file_if_missing "$ROOT/plugins/code-review/PLUGIN.md" <<'EOF'
+## code-review
+
+Источник (как Claude plugin): `https://claude.com/plugins/code-review`
+
+В этой репе это **универсальный пак** для review (agents/rules/hooks/docs). Генерируется `./sync` (если отсутствует).
+EOF
+
+write_file_if_missing "$ROOT/plugins/code-review/agents/reviewer.md" <<'EOF'
+---
+name: reviewer
+description: Review changes and report high-confidence issues.
+---
+
+Review the PR/branch changes.
+Output:
+- critical bugs
+- security issues
+- maintainability problems
+Include file paths and precise references.
+EOF
+
+write_file_if_missing "$ROOT/plugins/code-review/rules/review.md" <<'EOF'
+## Review rules
+
+- Фокус на high-confidence замечания.
+- Не придумывай требования: опирайся на код/доки/контекст репо.
+- Приоритизируй: security > correctness > data loss > perf > style.
+EOF
+
+# security-guidance
+write_file_if_missing "$ROOT/plugins/security-guidance/PLUGIN.md" <<'EOF'
+## security-guidance
+
+Источник (как Claude plugin): `https://claude.com/plugins/security-guidance`
+
+В этой репе это **универсальный пак** (rules/hooks/docs) с базовым security-чеклистом.
+Генерируется `./sync` (если отсутствует).
+EOF
+
+write_file_if_missing "$ROOT/plugins/security-guidance/rules/security.md" <<'EOF'
+## Security guidance (baseline)
+
+Перед применением изменений проверяй:
+
+- command injection: shell вызовы, `exec`, непроверенные аргументы
+- XSS: `innerHTML`, `dangerouslySetInnerHTML`, HTML шаблоны без экранирования
+- SSRF: fetch/requests на user-controlled URL
+- deserialization: `pickle`, `yaml.load`, небезопасные декодеры
+- secrets: ключи/токены в репо, логи, трейсах
+- authz: проверки прав (не только authn)
+- path traversal: файловые пути из user input
+EOF
+
+echo "== sync anthropics/skills -> plugins/*/skills/* =="
+
+for s in docx xlsx pptx pdf; do
+  rm -rf "$ROOT/plugins/$s/skills/$s"
+  cp -a "$TMP/skills/skills/$s" "$ROOT/plugins/$s/skills/"
+  echo "  + $s"
+done
+
+rm -rf "$ROOT/plugins/mcp-builder/skills/mcp-builder"
+cp -a "$TMP/skills/skills/mcp-builder" "$ROOT/plugins/mcp-builder/skills/"
+echo "  + mcp-builder"
+
+rm -rf "$ROOT/plugins/skill-creator/skills/skill-creator"
+cp -a "$TMP/skills/skills/skill-creator" "$ROOT/plugins/skill-creator/skills/"
+echo "  + skill-creator"
+
+rm -rf "$ROOT/plugins/frontend-design/skills/frontend-design"
+cp -a "$TMP/skills/skills/frontend-design" "$ROOT/plugins/frontend-design/skills/"
+echo "  + frontend-design"
+
+echo "== sync superpowers -> plugins/superpowers =="
+rm -rf "$TMP/superpowers"
+if git clone --depth 1 https://github.com/obra/superpowers.git "$TMP/superpowers" >/dev/null 2>&1; then
+  rm -rf \
+    "$ROOT/plugins/superpowers/skills/superpowers" \
+    "$ROOT/plugins/superpowers/agents/superpowers" \
+    "$ROOT/plugins/superpowers/hooks/superpowers" \
+    "$ROOT/plugins/superpowers/docs/superpowers" \
+    "$ROOT/plugins/superpowers/hooks/superpowers" \
+    "$ROOT/plugins/superpowers/docs/superpowers" \
+    "$ROOT/plugins/superpowers/commands/superpowers" 2>/dev/null || true
+
+  if [[ -d "$TMP/superpowers/skills" ]]; then
+    mkdir -p "$ROOT/plugins/superpowers/skills"
+    cp -a "$TMP/superpowers/skills" "$ROOT/plugins/superpowers/skills/superpowers"
+  fi
+  if [[ -d "$TMP/superpowers/agents" ]]; then
+    mkdir -p "$ROOT/plugins/superpowers/agents"
+    cp -a "$TMP/superpowers/agents" "$ROOT/plugins/superpowers/agents/superpowers"
+  fi
+  if [[ -d "$TMP/superpowers/hooks" ]]; then
+    mkdir -p "$ROOT/plugins/superpowers/hooks"
+    cp -a "$TMP/superpowers/hooks" "$ROOT/plugins/superpowers/hooks/superpowers"
+  fi
+  if [[ -d "$TMP/superpowers/docs" ]]; then
+    mkdir -p "$ROOT/plugins/superpowers/docs"
+    cp -a "$TMP/superpowers/docs" "$ROOT/plugins/superpowers/docs/superpowers"
+  fi
+  if [[ -d "$TMP/superpowers/commands" ]]; then
+    mkdir -p "$ROOT/plugins/superpowers/commands"
+    cp -a "$TMP/superpowers/commands" "$ROOT/plugins/superpowers/commands/superpowers"
+  fi
+
+  rm -rf "$ROOT/plugins/superpowers/skills/superpowers/.git" \
+    "$ROOT/plugins/superpowers/agents/superpowers/.git" \
+    "$ROOT/plugins/superpowers/hooks/superpowers/.git" \
+    "$ROOT/plugins/superpowers/docs/superpowers/.git" \
+    "$ROOT/plugins/superpowers/commands/superpowers/.git" 2>/dev/null || true
+
+  echo "  + superpowers (skills/agents/hooks/docs/commands)"
+else
+  echo "  ! не смог скачать obra/superpowers — пропуск"
+fi
+
+echo "== sync get-shit-done (GSD) -> plugins/get-shit-done =="
+rm -rf "$TMP/gsd"
+if git clone --depth 1 https://github.com/gsd-build/get-shit-done.git "$TMP/gsd" >/dev/null 2>&1; then
+  rm -rf \
+    "$ROOT/plugins/get-shit-done/skills/gsd" \
+    "$ROOT/plugins/get-shit-done/agents/gsd" \
+    "$ROOT/plugins/get-shit-done/hooks/gsd" \
+    "$ROOT/plugins/get-shit-done/docs/gsd" \
+    "$ROOT/plugins/get-shit-done/commands/gsd" 2>/dev/null || true
+
+  if [[ -d "$TMP/gsd/skills" ]]; then
+    mkdir -p "$ROOT/plugins/get-shit-done/skills"
+    cp -a "$TMP/gsd/skills" "$ROOT/plugins/get-shit-done/skills/gsd"
+  fi
+  if [[ -d "$TMP/gsd/agents" ]]; then
+    mkdir -p "$ROOT/plugins/get-shit-done/agents"
+    cp -a "$TMP/gsd/agents" "$ROOT/plugins/get-shit-done/agents/gsd"
+  fi
+  if [[ -d "$TMP/gsd/hooks" ]]; then
+    mkdir -p "$ROOT/plugins/get-shit-done/hooks"
+    cp -a "$TMP/gsd/hooks" "$ROOT/plugins/get-shit-done/hooks/gsd"
+  fi
+  if [[ -d "$TMP/gsd/docs" ]]; then
+    mkdir -p "$ROOT/plugins/get-shit-done/docs"
+    cp -a "$TMP/gsd/docs" "$ROOT/plugins/get-shit-done/docs/gsd"
+  fi
+  if [[ -d "$TMP/gsd/commands" ]]; then
+    mkdir -p "$ROOT/plugins/get-shit-done/commands"
+    cp -a "$TMP/gsd/commands" "$ROOT/plugins/get-shit-done/commands/gsd"
+  fi
+
+  rm -rf "$ROOT/plugins/get-shit-done/skills/gsd/.git" \
+    "$ROOT/plugins/get-shit-done/agents/gsd/.git" \
+    "$ROOT/plugins/get-shit-done/hooks/gsd/.git" \
+    "$ROOT/plugins/get-shit-done/docs/gsd/.git" \
+    "$ROOT/plugins/get-shit-done/commands/gsd/.git" 2>/dev/null || true
+
+  echo "  + get-shit-done (repo copy)"
+else
+  echo "  ! не смог скачать gsd-build/get-shit-done — пропуск"
+fi
+
+echo "== sync humanizer -> plugins/humanizer =="
+rm -rf "$TMP/humanizer"
+rm -rf "$ROOT/plugins/humanizer/skills/humanizer"
+if git clone --depth 1 https://github.com/blader/humanizer.git "$TMP/humanizer" >/dev/null 2>&1; then
+  mkdir -p "$ROOT/plugins/humanizer/skills"
+  cp -a "$TMP/humanizer" "$ROOT/plugins/humanizer/skills/humanizer"
+  rm -rf "$ROOT/plugins/humanizer/skills/humanizer/.git" 2>/dev/null || true
+  echo "  + humanizer"
+else
+  echo "  ! не смог скачать blader/humanizer — пропуск"
+fi
+
+echo "Готово."
