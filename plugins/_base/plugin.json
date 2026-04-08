@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "name": "_base",
+  "external": false,
+  "description": "Базовый шаблон плагина (копируй и правь).",
+  "sync": {
+    "enabled": false,
+    "script": "sync.sh"
+  }
+}

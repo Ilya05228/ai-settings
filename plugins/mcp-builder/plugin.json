@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "name": "mcp-builder",
+  "external": true,
+  "sync": {
+    "enabled": true,
+    "script": "sync.sh",
+    "copy": [
+      {
+        "from": "skills/mcp-builder",
+        "to": "skills/mcp-builder"
+      }
+    ]
+  },
+  "description": "Навык для создания MCP-серверов из anthropics/skills.",
+  "source": {
+    "type": "git",
+    "url": "https://github.com/anthropics/skills.git",
+    "ref": "main"
+  }
+}

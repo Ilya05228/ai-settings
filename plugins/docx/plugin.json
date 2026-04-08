@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "name": "docx",
+  "external": true,
+  "sync": {
+    "enabled": true,
+    "script": "sync.sh",
+    "copy": [
+      {
+        "from": "skills/docx",
+        "to": "skills/docx"
+      }
+    ]
+  },
+  "description": "Навык для работы с Word (.docx) из anthropics/skills.",
+  "source": {
+    "type": "git",
+    "url": "https://github.com/anthropics/skills.git",
+    "ref": "main"
+  }
+}

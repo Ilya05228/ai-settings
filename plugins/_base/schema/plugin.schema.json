@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/ai-settings/plugin.schema.json",
+  "title": "ai-settings plugin.json schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "name", "description", "external", "sync"],
+  "properties": {
+    "schemaVersion": { "type": "integer", "minimum": 1 },
+    "name": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9\\-_.]*$",
+      "minLength": 1
+    },
+    "description": { "type": "string", "minLength": 1 },
+    "external": { "type": "boolean" },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "url"],
+      "properties": {
+        "type": { "type": "string", "enum": ["git"] },
+        "url": { "type": "string", "minLength": 1 },
+        "ref": { "type": "string", "minLength": 1 }
+      }
+    },
+    "sync": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["enabled", "script"],
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "script": { "type": "string", "minLength": 1 },
+        "copy": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["from", "to"],
+            "properties": {
+              "from": { "type": "string", "minLength": 1 },
+              "to": { "type": "string", "minLength": 1 }
+            }
+          }
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "external": { "const": true } } },
+      "then": { "required": ["source"] }
+    },
+    {
+      "if": { "properties": { "external": { "const": false } } },
+      "then": {
+        "not": { "required": ["source"] }
+      }
+    }
+  ]
+}
+

@@ -1,13 +1,9 @@
-/agents/gsd/
-/skills/gsd/
-/skills/office/
-/skills/superpowers/
-/skills/misc/humanizer/
-/skills/misc/mcp-builder/
-/get-shit-done/
-/gsd-file-manifest.json
-
-# temp / caches (optional)
+# temp / caches
 .DS_Store
 *.swp
 *~
+__pycache__/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+node_modules/

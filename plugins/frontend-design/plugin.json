@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "name": "frontend-design",
+  "external": true,
+  "sync": {
+    "enabled": true,
+    "script": "sync.sh",
+    "copy": [
+      {
+        "from": "skills/frontend-design",
+        "to": "skills/frontend-design"
+      }
+    ]
+  },
+  "description": "Навык для фронтенд-дизайна из anthropics/skills.",
+  "source": {
+    "type": "git",
+    "url": "https://github.com/anthropics/skills.git",
+    "ref": "main"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "name": "skill-creator",
+  "external": true,
+  "sync": {
+    "enabled": true,
+    "script": "sync.sh",
+    "copy": [
+      {
+        "from": "skills/skill-creator",
+        "to": "skills/skill-creator"
+      }
+    ]
+  },
+  "description": "Навык для создания/авторинга skills из anthropics/skills.",
+  "source": {
+    "type": "git",
+    "url": "https://github.com/anthropics/skills.git",
+    "ref": "main"
+  }
+}

@@ -1,0 +1,211 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "$0")" && pwd)"
+cd "$ROOT"
+
+usage() {
+  cat <<'EOF'
+ai-settings: команды
+
+Команды:
+  ./commands help
+  ./commands --help
+  ./commands -h
+  ./commands sync-all
+  ./commands sync-plugin <name>
+  ./commands make-docs
+  ./commands new-plugin <name>
+  ./commands install --dest <path> --plugins a,b,c
+
+Примечания:
+  - метаданные плагина: plugins/<name>/plugin.json
+  - описание плагина: plugins/<name>/description.md (ручной файл)
+EOF
+}
+
+die() { echo "$*" >&2; exit 1; }
+
+cmd="${1:-}"
+shift || true
+
+sync_all() {
+  python3 - <<'PY'
+import json, subprocess
+from pathlib import Path
+
+plugins_dir = Path("plugins").resolve()
+
+def load_cfg(p: Path):
+  try:
+    return json.loads((p / "plugin.json").read_text(encoding="utf-8"))
+  except Exception:
+    return None
+
+for p in sorted(plugins_dir.iterdir()):
+  if not p.is_dir():
+    continue
+  cfg = load_cfg(p)
+  if not cfg or not cfg.get("external"):
+    continue
+  sync_cfg = cfg.get("sync") or {}
+  if not sync_cfg.get("enabled", False):
+    continue
+  script = sync_cfg.get("script") or "sync.sh"
+  script_path = p / script
+  if not script_path.exists():
+    print(f"  ! {p.name}: missing {script}")
+    continue
+  print(f"== {p.name} ==")
+  subprocess.check_call(["bash", str(script_path)])
+PY
+}
+
+sync_one() {
+  local name="$1"
+  local dir="$ROOT/plugins/$name"
+  [[ -d "$dir" ]] || die "No such plugin: $name"
+  [[ -f "$dir/plugin.json" ]] || die "Missing plugin.json for: $name"
+  python3 - "$dir" <<'PY'
+import json, subprocess, sys
+from pathlib import Path
+p = Path(sys.argv[1]).resolve()
+cfg = json.loads((p/"plugin.json").read_text(encoding="utf-8"))
+if not cfg.get("external"):
+  print("skip: not external")
+  raise SystemExit(0)
+sync_cfg = cfg.get("sync") or {}
+if not sync_cfg.get("enabled", False):
+  print("skip: sync.disabled")
+  raise SystemExit(0)
+script = sync_cfg.get("script") or "sync.sh"
+script_path = p / script
+subprocess.check_call(["bash", str(script_path)])
+PY
+}
+
+generate_docs() {
+  mkdir -p "$ROOT/docs"
+  python3 - >"$ROOT/docs/PLUGINS.md" <<'PY'
+import json
+from pathlib import Path
+
+plugins = []
+for p in sorted(Path("plugins").iterdir()):
+  if not p.is_dir():
+    continue
+  cfg_path = p/"plugin.json"
+  if not cfg_path.exists():
+    continue
+  cfg = json.loads(cfg_path.read_text(encoding="utf-8"))
+  src = cfg.get("source") if cfg.get("external") else None
+  plugins.append({
+    "name": cfg.get("name", p.name),
+    "description": cfg.get("description","").strip(),
+    "external": bool(cfg.get("external", False)),
+    "source": (src.get("url") if isinstance(src, dict) else "") if src else "",
+  })
+
+print("# Плагины")
+print()
+print("| плагин | внешний | источник | описание |")
+print("|--------|---------|----------|----------|")
+for x in plugins:
+  src = x["source"]
+  if src:
+    src = f"`{src}`"
+  print(f"| `{x['name']}` | `{str(x['external']).lower()}` | {src} | {x['description']} |")
+PY
+  echo "wrote docs/PLUGINS.md"
+}
+
+new_plugin() {
+  local name="$1"
+  [[ "$name" =~ ^[a-z0-9][a-z0-9._-]*$ ]] || die "Bad name: $name"
+  local dst="$ROOT/plugins/$name"
+  [[ -e "$dst" ]] && die "Already exists: plugins/$name"
+  cp -a "$ROOT/plugins/_base" "$dst"
+  python3 - "$dst/plugin.json" "$name" <<'PY'
+import json, sys
+path = sys.argv[1]
+name = sys.argv[2]
+cfg = json.load(open(path, encoding="utf-8"))
+cfg["name"] = name
+cfg["description"] = f"{name} plugin."
+cfg["external"] = False
+cfg.pop("source", None)
+json.dump(cfg, open(path,"w",encoding="utf-8"), ensure_ascii=False, indent=2)
+open(path,"a",encoding="utf-8").write("\n")
+PY
+  chmod +x "$dst/sync.sh" || true
+  echo "created plugins/$name"
+}
+
+install_to() {
+  local dest=""
+  local plugins=""
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --dest) dest="${2:-}"; shift 2;;
+      --plugins) plugins="${2:-}"; shift 2;;
+      *) die "Unknown arg: $1";;
+    esac
+  done
+  [[ -n "$dest" && -n "$plugins" ]] || die "install requires --dest and --plugins"
+
+  mkdir -p "$dest/skills" "$dest/agents"
+
+  "$ROOT/commands" sync-all
+
+  IFS=',' read -r -a list <<<"$plugins"
+  for plugin in "${list[@]}"; do
+    plugin="${plugin// /}"
+    [[ -z "$plugin" ]] && continue
+    base="$ROOT/plugins/$plugin"
+    [[ -d "$base" ]] || die "No such plugin dir: $plugin"
+
+    if [[ -d "$base/skills" ]]; then
+      for s in "$base/skills"/*; do
+        [[ -d "$s" ]] || continue
+        name="$(basename "$s")"
+        rm -rf "$dest/skills/${plugin}-${name}"
+        cp -a "$s" "$dest/skills/${plugin}-${name}"
+        echo "  + skill ${plugin}-${name}"
+      done
+    fi
+
+    if [[ -d "$base/agents" ]]; then
+      while IFS= read -r -d '' f; do
+        bn="$(basename "$f")"
+        rm -f "$dest/agents/${plugin}-${bn}"
+        cp -a "$f" "$dest/agents/${plugin}-${bn}"
+        echo "  + agent ${plugin}-${bn}"
+      done < <(find "$base/agents" -type f -name "*.md" -print0)
+    fi
+  done
+}
+
+case "$cmd" in
+  help)
+    usage; exit 0;;
+  sync-all)
+    sync_all
+    exit 0;;
+  sync-plugin)
+    sync_one "${1:-}"
+    exit 0;;
+  make-docs)
+    generate_docs
+    exit 0;;
+  new-plugin)
+    new_plugin "${1:-}"
+    exit 0;;
+  install)
+    install_to "$@"
+    exit 0;;
+  ""|-h|--help)
+    usage; exit 0;;
+  *)
+    usage; exit 2;;
+esac
+

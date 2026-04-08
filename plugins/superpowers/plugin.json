@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "name": "superpowers",
+  "external": true,
+  "sync": {
+    "enabled": true,
+    "script": "sync.sh",
+    "copy": [
+      {
+        "from": "skills",
+        "to": "skills/superpowers"
+      },
+      {
+        "from": "agents",
+        "to": "agents/superpowers"
+      },
+      {
+        "from": "hooks",
+        "to": "hooks/superpowers"
+      },
+      {
+        "from": "docs",
+        "to": "docs/superpowers"
+      },
+      {
+        "from": "commands",
+        "to": "commands/superpowers"
+      }
+    ]
+  },
+  "description": "Workflow-пак Superpowers (skills/agents/hooks/docs/commands).",
+  "source": {
+    "type": "git",
+    "url": "https://github.com/obra/superpowers.git",
+    "ref": "main"
+  }
+}

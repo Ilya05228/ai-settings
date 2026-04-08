@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "name": "get-shit-done",
+  "external": true,
+  "sync": {
+    "enabled": true,
+    "script": "sync.sh",
+    "copy": [
+      {
+        "from": "skills",
+        "to": "skills/gsd"
+      },
+      {
+        "from": "agents",
+        "to": "agents/gsd"
+      },
+      {
+        "from": "hooks",
+        "to": "hooks/gsd"
+      },
+      {
+        "from": "docs",
+        "to": "docs/gsd"
+      },
+      {
+        "from": "commands",
+        "to": "commands/gsd"
+      }
+    ]
+  },
+  "description": "Workflow-пак Get Shit Done (skills/agents/hooks/docs/commands).",
+  "source": {
+    "type": "git",
+    "url": "https://github.com/gsd-build/get-shit-done.git",
+    "ref": "main"
+  }
+}

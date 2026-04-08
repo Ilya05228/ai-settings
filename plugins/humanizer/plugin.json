@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "name": "humanizer",
+  "external": true,
+  "sync": {
+    "enabled": true,
+    "script": "sync.sh",
+    "copy": [
+      {
+        "from": ".",
+        "to": "skills/humanizer"
+      }
+    ]
+  },
+  "description": "Навык Humanizer (переписывает текст более естественно).",
+  "source": {
+    "type": "git",
+    "url": "https://github.com/blader/humanizer.git",
+    "ref": "main"
+  }
+}
