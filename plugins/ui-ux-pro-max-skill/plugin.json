@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "name": "ui-ux-pro-max-skill",
+  "external": true,
+  "sync": {
+    "enabled": true,
+    "script": "sync.sh",
+    "copy": [
+      {
+        "from": ".claude/skills",
+        "to": "skills/ui-ux-pro-max"
+      }
+    ]
+  },
+  "description": "UI/UX Pro Max skill (design intelligence, templates, scripts).",
+  "source": {
+    "type": "git",
+    "url": "https://github.com/nextlevelbuilder/ui-ux-pro-max-skill.git",
+    "ref": "main"
+  }
+}
+

@@ -29,6 +29,7 @@ bash ./commands install --dest /path/to/.cursor --plugins pdf,docx,superpowers
 
 - список всех плагинов: `docs/PLUGINS.md` (генерится командой `./commands docs`)
 - документация по каждому плагину: `plugins/<name>/description.md`
+- MCP сервера (шаблоны конфигов): `mcps/`
 
 ## TODO
 

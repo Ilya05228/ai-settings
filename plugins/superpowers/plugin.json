@@ -17,18 +17,10 @@
       {
         "from": "hooks",
         "to": "hooks/superpowers"
-      },
-      {
-        "from": "docs",
-        "to": "docs/superpowers"
-      },
-      {
-        "from": "commands",
-        "to": "commands/superpowers"
       }
     ]
   },
-  "description": "Workflow-пак Superpowers (skills/agents/hooks/docs/commands).",
+  "description": "Workflow-пак Superpowers (skills/agents/hooks).",
   "source": {
     "type": "git",
     "url": "https://github.com/obra/superpowers.git",

@@ -19,16 +19,12 @@
         "to": "hooks/gsd"
       },
       {
-        "from": "docs",
-        "to": "docs/gsd"
-      },
-      {
         "from": "commands",
         "to": "commands/gsd"
       }
     ]
   },
-  "description": "Workflow-пак Get Shit Done (skills/agents/hooks/docs/commands).",
+  "description": "Workflow-пак Get Shit Done (skills/agents/hooks/commands).",
   "source": {
     "type": "git",
     "url": "https://github.com/gsd-build/get-shit-done.git",

@@ -57,7 +57,12 @@ for p in sorted(plugins_dir.iterdir()):
     print(f"  ! {p.name}: missing {script}")
     continue
   print(f"== {p.name} ==")
-  subprocess.check_call(["bash", str(script_path)])
+  try:
+    subprocess.check_call(["bash", str(script_path)])
+  except subprocess.CalledProcessError as e:
+    print(f"  ! {p.name}: sync failed (exit {e.returncode})")
+    # Continue syncing other plugins instead of failing sync-all.
+    continue
 PY
 }
 
