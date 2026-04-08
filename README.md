@@ -21,8 +21,11 @@ bash ./commands new-plugin my-plugin
 # сгенерировать таблицу всех плагинов
 bash ./commands make-docs
 
-# установить выбранные плагины в папку (skills/agents с неймингом plugin-name)
-bash ./commands install --dest /path/to/.cursor --plugins pdf,docx,superpowers
+# установить все плагины (все папки plugins/* с plugin.json, кроме _base) в .cursor рядом с репо:
+bash ./commands install --dest ./.cursor --all
+# или перечислить вручную:
+bash ./commands install --dest ./.cursor --plugins docx,superpowers
+# каждый скилл — папка <плагин>-<name из YAML или каталога>; агенты — <плагин>-<name>.md
 ```
 
 ## Документация

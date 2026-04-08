@@ -17,12 +17,18 @@ ai-settings: команды
   ./commands make-docs
   ./commands new-plugin <name>
   ./commands install --dest <path> --plugins a,b,c
+  ./commands install --dest <path> --all
 
 Примечания:
   - метаданные плагина: plugins/<name>/plugin.json
   - описание плагина: plugins/<name>/description.md (ручной файл)
   - install не запускает sync-all; перед установкой выполни ./commands sync-all,
     если нужны свежие копии внешних плагинов в plugins/<name>/
+  - при install каждый скилл — папка с SKILL.md; имя папки = <плагин>-<name из YAML
+    или имя каталога>. В SKILL.md в поле name записывается то же значение.
+  - агенты: файл <плагин>-<name из YAML или stem>.md, поле name в шапке совпадает
+    с именем файла (без .md).
+  - --all: ставит все каталоги из plugins/ с plugin.json, кроме _base.
 EOF
 }
 
@@ -151,43 +157,151 @@ PY
 install_to() {
   local dest=""
   local plugins=""
+  local use_all=0
   while [[ $# -gt 0 ]]; do
     case "$1" in
       --dest) dest="${2:-}"; shift 2;;
       --plugins) plugins="${2:-}"; shift 2;;
+      --all) use_all=1; shift;;
       *) die "Unknown arg: $1";;
     esac
   done
-  [[ -n "$dest" && -n "$plugins" ]] || die "install requires --dest and --plugins"
+  [[ -n "$dest" ]] || die "install requires --dest"
+  if [[ "$use_all" -eq 1 ]]; then
+    [[ -z "$plugins" ]] || die "install: use either --all or --plugins, not both"
+    plugins=""
+    local d name
+    for d in "$ROOT/plugins"/*/; do
+      [[ -d "$d" ]] || continue
+      name="$(basename "$d")"
+      [[ "$name" == "_base" ]] && continue
+      [[ -f "${d}plugin.json" ]] || continue
+      plugins="${plugins:+$plugins,}$name"
+    done
+    [[ -n "$plugins" ]] || die "install --all: no plugins found (need plugins/*/plugin.json, not _base)"
+  else
+    if [[ -n "$plugins" ]] && [[ "${plugins,,}" == "all" ]]; then
+      die "install: use --all to install every plugin (not --plugins all)"
+    fi
+    [[ -n "$plugins" ]] || die "install requires --plugins <list> or --all"
+  fi
+  # стабильный порядок (имена плагинов)
+  plugins="$(printf '%s' "$plugins" | tr ',' '\n' | sed '/^$/d' | sort -u | paste -sd, -)"
 
   mkdir -p "$dest/skills" "$dest/agents"
 
-  IFS=',' read -r -a list <<<"$plugins"
-  for plugin in "${list[@]}"; do
-    plugin="${plugin// /}"
-    [[ -z "$plugin" ]] && continue
-    base="$ROOT/plugins/$plugin"
-    [[ -d "$base" ]] || die "No such plugin dir: $plugin"
+  python3 - "$ROOT" "$dest" "$plugins" <<'PY'
+import re
+import shutil
+import sys
+from pathlib import Path
 
-    if [[ -d "$base/skills" ]]; then
-      for s in "$base/skills"/*; do
-        [[ -d "$s" ]] || continue
-        name="$(basename "$s")"
-        rm -rf "$dest/skills/${plugin}-${name}"
-        cp -a "$s" "$dest/skills/${plugin}-${name}"
-        echo "  + skill ${plugin}-${name}"
-      done
-    fi
+ROOT = Path(sys.argv[1]).resolve()
+dest_root = Path(sys.argv[2]).resolve()
+plugins_csv = sys.argv[3]
 
-    if [[ -d "$base/agents" ]]; then
-      while IFS= read -r -d '' f; do
-        bn="$(basename "$f")"
-        rm -f "$dest/agents/${plugin}-${bn}"
-        cp -a "$f" "$dest/agents/${plugin}-${bn}"
-        echo "  + agent ${plugin}-${bn}"
-      done < <(find "$base/agents" -type f -name "*.md" -print0)
-    fi
-  done
+FM_RE = re.compile(r"\A---\n([\s\S]*?)\n---\n([\s\S]*)\Z")
+
+
+def slugify(s: str) -> str:
+    s = (s or "").strip().lower()
+    s = re.sub(r"[^a-z0-9_.-]+", "-", s)
+    s = re.sub(r"-+", "-", s).strip("-")
+    return s or "item"
+
+
+def split_fm(text: str):
+    m = FM_RE.match(text)
+    if m:
+        return m.group(1), m.group(2)
+    return None, text
+
+
+def extract_name_from_block(block):
+    if not block:
+        return None
+    m = re.search(r"^name:\s*(.+)$", block, re.M)
+    if not m:
+        return None
+    return m.group(1).strip().strip("\"'")
+
+
+def merge_frontmatter(text: str, new_name: str) -> str:
+    block, body = split_fm(text)
+    if block is None:
+        return f"---\nname: {new_name}\n---\n\n" + text
+    nb = block
+    if re.search(r"^name:\s*", nb, re.M):
+        nb = re.sub(r"^name:\s*[^\n]*$", f"name: {new_name}", nb, count=1, flags=re.M)
+    else:
+        nb = f"name: {new_name}\n" + nb
+    return f"---\n{nb}\n---\n{body}"
+
+
+def install_plugin_skills(plugin: str, base: Path, dest_skills: Path) -> None:
+    base_skills = base / "skills"
+    if not base_skills.is_dir():
+        return
+    seen_roots: dict[str, Path] = {}
+    for skill_md in sorted(base_skills.rglob("SKILL.md")):
+        root = skill_md.parent
+        raw = skill_md.read_text(encoding="utf-8")
+        block, _ = split_fm(raw)
+        author_raw = extract_name_from_block(block)
+        author_slug = slugify(author_raw or root.name)
+        dest_name = f"{plugin}-{author_slug}"
+        if dest_name in seen_roots and seen_roots[dest_name] != root:
+            extra = slugify(root.name)
+            dest_name = (
+                f"{plugin}-{author_slug}-{extra}"
+                if extra != author_slug
+                else f"{plugin}-{author_slug}-{len(seen_roots)}"
+            )
+        seen_roots[dest_name] = root
+        dd = dest_skills / dest_name
+        if dd.exists():
+            shutil.rmtree(dd)
+        shutil.copytree(root, dd, symlinks=True)
+        out = dd / "SKILL.md"
+        out.write_text(merge_frontmatter(out.read_text(encoding="utf-8"), dest_name), encoding="utf-8")
+        print(f"  + skill {dest_name}")
+
+
+def install_plugin_agents(plugin: str, base: Path, dest_agents: Path) -> None:
+    base_agents = base / "agents"
+    if not base_agents.is_dir():
+        return
+    used_files: dict[str, Path] = {}
+    for md in sorted(base_agents.rglob("*.md")):
+        raw = md.read_text(encoding="utf-8")
+        block, _ = split_fm(raw)
+        author_raw = extract_name_from_block(block)
+        author_slug = slugify(author_raw or md.stem)
+        dest_bn = f"{plugin}-{author_slug}.md"
+        if dest_bn in used_files and used_files[dest_bn] != md:
+            dest_bn = f"{plugin}-{author_slug}-{slugify(md.parent.name)}.md"
+        used_files[dest_bn] = md
+        out = dest_agents / dest_bn
+        if out.exists():
+            out.unlink()
+        shutil.copy2(md, out)
+        final_name = out.stem
+        out.write_text(merge_frontmatter(out.read_text(encoding="utf-8"), final_name), encoding="utf-8")
+        print(f"  + agent {dest_bn}")
+
+
+for token in plugins_csv.split(","):
+    plugin = token.strip()
+    if not plugin:
+        continue
+    base = ROOT / "plugins" / plugin
+    if not base.is_dir():
+        print(f"No such plugin dir: {plugin}", file=sys.stderr)
+        sys.exit(1)
+    print(f"== {plugin} ==")
+    install_plugin_skills(plugin, base, dest_root / "skills")
+    install_plugin_agents(plugin, base, dest_root / "agents")
+PY
 }
 
 case "$cmd" in
