@@ -8,7 +8,7 @@
     "copy": [
       {
         "from": ".claude/skills",
-        "to": "skills/ui-ux-pro-max"
+        "to": "skills"
       }
     ]
   },

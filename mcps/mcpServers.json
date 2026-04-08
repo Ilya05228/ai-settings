@@ -26,6 +26,9 @@
     "duckduckgo": {
       "command": "npx",
       "args": ["-y", "duckduckgo-mcp-server"]
+    },
+    "grep": {
+      "url": "https://mcp.grep.app"
     }
   }
 }
