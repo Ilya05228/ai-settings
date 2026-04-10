@@ -1,6 +1,4 @@
 ## MCP servers
 
-Шаблоны конфигов MCP-серверов для копирования в конфиг твоего ассистента.
-
-- `mcpServers.json`: пример секции `"mcpServers"` (Playwright MCP, Context7, git/time, sequential-thinking, duckduckgo).
+Каждый MCP — **отдельный плагин** `plugins/mcp-<имя>/` с файлом `mcp.json` (ровно один сервер в объекте `mcpServers`). Команда `./commands install` мержит выбранные плагины в `<dest>/mcp.json` (см. корневой `README.md`). У этих плагинов нет `sync.sh`: они локальные, только конфиг.
 

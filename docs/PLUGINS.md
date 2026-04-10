@@ -8,6 +8,13 @@
 | `get-shit-done` | `true` | `https://github.com/gsd-build/get-shit-done.git` | Workflow-пак Get Shit Done (skills/agents/hooks/commands). |
 | `humanizer` | `true` | `https://github.com/blader/humanizer.git` | Навык Humanizer (переписывает текст более естественно). |
 | `mcp-builder` | `true` | `https://github.com/anthropics/skills.git` | Навык для создания MCP-серверов из anthropics/skills. |
+| `mcp-context7` | `false` |  | MCP: Context7 — документация библиотек (нужен CONTEXT7_API_KEY). |
+| `mcp-duckduckgo` | `false` |  | MCP: DuckDuckGo search (duckduckgo-mcp-server). |
+| `mcp-git` | `false` |  | MCP: git (uvx mcp-server-git). |
+| `mcp-grep` | `false` |  | MCP: grep.app (удалённый URL). |
+| `mcp-playwright` | `false` |  | MCP: Playwright (@playwright/mcp) — браузер и автоматизация. |
+| `mcp-sequential-thinking` | `false` |  | MCP: sequential-thinking (@modelcontextprotocol/server-sequential-thinking). |
+| `mcp-time` | `false` |  | MCP: time (uvx mcp-server-time). |
 | `pdf` | `true` | `https://github.com/anthropics/skills.git` | Навык для работы с PDF из anthropics/skills. |
 | `pptx` | `true` | `https://github.com/anthropics/skills.git` | Навык для работы с PowerPoint (.pptx) из anthropics/skills. |
 | `prompt-engineer` | `true` | `https://github.com/Jeffallan/claude-skills.git` | Skill Prompt Engineer из [Jeffallan/claude-skills](https://github.com/Jeffallan/claude-skills) (промпты, оценка, structured outputs, guardrails). MIT. |

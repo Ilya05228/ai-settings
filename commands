@@ -28,6 +28,11 @@ ai-settings: команды
     или имя каталога>. В SKILL.md в поле name записывается то же значение.
   - агенты: файл <плагин>-<name из YAML или stem>.md, поле name в шапке совпадает
     с именем файла (без .md).
+  - MCP: опциональный plugins/<name>/mcp.json — ровно один ключ в mcpServers
+    (один сервер на плагин; иначе install завершится с ошибкой).
+    В <dest>/mcp.json добавляются только новые имена серверов; существующие папки
+    скиллов/файлы агентов/ключи MCP не перезаписываются — при любом совпадении
+    install завершается с ошибкой до любых изменений (двухфазно).
   - --all: ставит все каталоги из plugins/ с plugin.json, кроме _base.
 EOF
 }
@@ -191,6 +196,7 @@ install_to() {
   mkdir -p "$dest/skills" "$dest/agents"
 
   python3 - "$ROOT" "$dest" "$plugins" <<'PY'
+import json
 import re
 import shutil
 import sys
@@ -238,11 +244,49 @@ def merge_frontmatter(text: str, new_name: str) -> str:
     return f"---\n{nb}\n---\n{body}"
 
 
-def install_plugin_skills(plugin: str, base: Path, dest_skills: Path) -> None:
+def load_plugin_mcp_servers(base: Path) -> dict:
+    p = base / "mcp.json"
+    if not p.is_file():
+        return {}
+    try:
+        data = json.loads(p.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as e:
+        raise SystemExit(f"Invalid JSON: {p}: {e}") from e
+    servers = data.get("mcpServers")
+    if servers is None:
+        return {}
+    if not isinstance(servers, dict):
+        raise SystemExit(f"{p}: mcpServers must be a JSON object")
+    if len(servers) > 1:
+        keys = ", ".join(sorted(servers))
+        raise SystemExit(f"{p}: expected exactly one MCP server per plugin (got {len(servers)}: {keys})")
+    return servers
+
+
+def read_dest_mcp(dest_root: Path) -> tuple[dict, dict]:
+    p = dest_root / "mcp.json"
+    if not p.is_file():
+        return {}, {}
+    try:
+        data = json.loads(p.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as e:
+        raise SystemExit(f"Invalid JSON in existing {p}: {e}") from e
+    if not isinstance(data, dict):
+        raise SystemExit(f"{p}: root must be a JSON object")
+    servers = data.get("mcpServers")
+    if servers is None:
+        servers = {}
+    if not isinstance(servers, dict):
+        raise SystemExit(f"{p}: mcpServers must be a JSON object")
+    return data, servers
+
+
+def plan_skill_targets(plugin: str, base: Path) -> list[tuple[str, Path]]:
     base_skills = base / "skills"
     if not base_skills.is_dir():
-        return
+        return []
     seen_roots: dict[str, Path] = {}
+    out: list[tuple[str, Path]] = []
     for skill_md in sorted(base_skills.rglob("SKILL.md")):
         root = skill_md.parent
         raw = skill_md.read_text(encoding="utf-8")
@@ -258,20 +302,16 @@ def install_plugin_skills(plugin: str, base: Path, dest_skills: Path) -> None:
                 else f"{plugin}-{author_slug}-{len(seen_roots)}"
             )
         seen_roots[dest_name] = root
-        dd = dest_skills / dest_name
-        if dd.exists():
-            shutil.rmtree(dd)
-        shutil.copytree(root, dd, symlinks=True)
-        out = dd / "SKILL.md"
-        out.write_text(merge_frontmatter(out.read_text(encoding="utf-8"), dest_name), encoding="utf-8")
-        print(f"  + skill {dest_name}")
+        out.append((dest_name, root))
+    return out
 
 
-def install_plugin_agents(plugin: str, base: Path, dest_agents: Path) -> None:
+def plan_agent_targets(plugin: str, base: Path) -> list[tuple[str, Path]]:
     base_agents = base / "agents"
     if not base_agents.is_dir():
-        return
+        return []
     used_files: dict[str, Path] = {}
+    out: list[tuple[str, Path]] = []
     for md in sorted(base_agents.rglob("*.md")):
         raw = md.read_text(encoding="utf-8")
         block, _ = split_fm(raw)
@@ -281,26 +321,127 @@ def install_plugin_agents(plugin: str, base: Path, dest_agents: Path) -> None:
         if dest_bn in used_files and used_files[dest_bn] != md:
             dest_bn = f"{plugin}-{author_slug}-{slugify(md.parent.name)}.md"
         used_files[dest_bn] = md
-        out = dest_agents / dest_bn
-        if out.exists():
-            out.unlink()
-        shutil.copy2(md, out)
-        final_name = out.stem
-        out.write_text(merge_frontmatter(out.read_text(encoding="utf-8"), final_name), encoding="utf-8")
-        print(f"  + agent {dest_bn}")
+        out.append((dest_bn, md))
+    return out
 
 
-for token in plugins_csv.split(","):
-    plugin = token.strip()
-    if not plugin:
-        continue
+def collect_conflicts(dest_root: Path, plugins: list[str]) -> list[str]:
+    conflicts: list[str] = []
+    dest_skills = dest_root / "skills"
+    dest_agents = dest_root / "agents"
+    _, existing_mcp = read_dest_mcp(dest_root)
+    batch_mcp_owner: dict[str, str] = {}
+    all_skill_names: list[tuple[str, str]] = []
+    all_agent_names: list[tuple[str, str]] = []
+
+    for plugin in plugins:
+        base = ROOT / "plugins" / plugin
+        for dest_name, _root in plan_skill_targets(plugin, base):
+            all_skill_names.append((plugin, dest_name))
+        for dest_bn, _md in plan_agent_targets(plugin, base):
+            all_agent_names.append((plugin, dest_bn))
+        mcp = load_plugin_mcp_servers(base)
+        for key in mcp:
+            if key in batch_mcp_owner and batch_mcp_owner[key] != plugin:
+                conflicts.append(
+                    f"MCP server name conflict in this install: {key!r} "
+                    f"(plugins {batch_mcp_owner[key]!r} and {plugin!r})"
+                )
+            elif key not in batch_mcp_owner:
+                batch_mcp_owner[key] = plugin
+
+    seen_s: set[str] = set()
+    for plugin, name in all_skill_names:
+        if name in seen_s:
+            conflicts.append(f"internal: duplicate skill target {name!r} (plugin {plugin!r})")
+        seen_s.add(name)
+    seen_a: set[str] = set()
+    for plugin, bn in all_agent_names:
+        if bn in seen_a:
+            conflicts.append(f"internal: duplicate agent target {bn!r} (plugin {plugin!r})")
+        seen_a.add(bn)
+
+    for plugin, dest_name in all_skill_names:
+        p = dest_skills / dest_name
+        if p.exists():
+            rel = p.relative_to(dest_root)
+            conflicts.append(
+                f"skill folder already exists: {rel} (would install from plugin {plugin!r})"
+            )
+
+    for plugin, dest_bn in all_agent_names:
+        p = dest_agents / dest_bn
+        if p.exists():
+            rel = p.relative_to(dest_root)
+            conflicts.append(
+                f"agent file already exists: {rel} (would install from plugin {plugin!r})"
+            )
+
+    for key, owner in batch_mcp_owner.items():
+        if key in existing_mcp:
+            conflicts.append(
+                f"MCP server {key!r} already in mcp.json (would add from plugin {owner!r})"
+            )
+
+    return conflicts
+
+
+def apply_install(dest_root: Path, plugins: list[str]) -> None:
+    dest_skills = dest_root / "skills"
+    dest_agents = dest_root / "agents"
+    full_doc, existing_servers = read_dest_mcp(dest_root)
+    new_servers = dict(existing_servers)
+    mcp_touched = False
+
+    for plugin in plugins:
+        base = ROOT / "plugins" / plugin
+        print(f"== {plugin} ==")
+        for dest_name, root in plan_skill_targets(plugin, base):
+            dd = dest_skills / dest_name
+            shutil.copytree(root, dd, symlinks=True)
+            out = dd / "SKILL.md"
+            out.write_text(merge_frontmatter(out.read_text(encoding="utf-8"), dest_name), encoding="utf-8")
+            print(f"  + skill {dest_name}")
+
+        for dest_bn, md in plan_agent_targets(plugin, base):
+            out = dest_agents / dest_bn
+            shutil.copy2(md, out)
+            final_name = out.stem
+            out.write_text(merge_frontmatter(out.read_text(encoding="utf-8"), final_name), encoding="utf-8")
+            print(f"  + agent {dest_bn}")
+
+        frag = load_plugin_mcp_servers(base)
+        for k, v in frag.items():
+            new_servers[k] = v
+            mcp_touched = True
+            print(f"  + mcp server {k}")
+
+    if mcp_touched:
+        full_out = dict(full_doc)
+        full_out["mcpServers"] = new_servers
+        mcp_path = dest_root / "mcp.json"
+        mcp_path.write_text(
+            json.dumps(full_out, ensure_ascii=False, indent=2) + "\n",
+            encoding="utf-8",
+        )
+        print(f"  wrote {mcp_path.name}")
+
+
+plugin_list = [t.strip() for t in plugins_csv.split(",") if t.strip()]
+for plugin in plugin_list:
     base = ROOT / "plugins" / plugin
     if not base.is_dir():
         print(f"No such plugin dir: {plugin}", file=sys.stderr)
         sys.exit(1)
-    print(f"== {plugin} ==")
-    install_plugin_skills(plugin, base, dest_root / "skills")
-    install_plugin_agents(plugin, base, dest_root / "agents")
+
+conflicts = collect_conflicts(dest_root, plugin_list)
+if conflicts:
+    print("Install aborted: conflicts (nothing was changed):", file=sys.stderr)
+    for c in conflicts:
+        print(f"  - {c}", file=sys.stderr)
+    sys.exit(1)
+
+apply_install(dest_root, plugin_list)
 PY
 }
 

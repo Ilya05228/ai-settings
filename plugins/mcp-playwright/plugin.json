@@ -1,0 +1,6 @@
+{
+  "schemaVersion": 1,
+  "name": "mcp-playwright",
+  "external": false,
+  "description": "MCP: Playwright (@playwright/mcp) — браузер и автоматизация."
+}

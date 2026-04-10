@@ -24,15 +24,16 @@ bash ./commands make-docs
 # установить все плагины (все папки plugins/* с plugin.json, кроме _base) в .cursor рядом с репо:
 bash ./commands install --dest ./.cursor --all
 # или перечислить вручную:
-bash ./commands install --dest ./.cursor --plugins docx,superpowers
+bash ./commands install --dest ./.cursor --plugins docx,superpowers,mcp-git
 # каждый скилл — папка <плагин>-<name из YAML или каталога>; агенты — <плагин>-<name>.md
+# MCP — плагины вида mcp-context7, mcp-git, … (по одному серверу на плагин)
 ```
 
 ## Документация
 
 - список всех плагинов: `docs/PLUGINS.md` (генерится командой `./commands docs`)
 - документация по каждому плагину: `plugins/<name>/description.md`
-- MCP сервера (шаблоны конфигов): `mcps/`
+- MCP: отдельные плагины `plugins/mcp-*/` + кратко `mcps/README.md`
 
 ## TODO
 
@@ -41,7 +42,7 @@ bash ./commands install --dest ./.cursor --plugins docx,superpowers
 - для **каждого языка программирования**, с которым работаешь, завести отдельный skill или раздел с **best practices** (стиль, типичные антипаттерны, тесты, безопасность, инструменты) — чтобы агент опирался на согласованные правила, а не на общие рассуждения; **не дублировать** готовые пакеты: выбрать один внешний источник (например [Jeffallan/claude-skills](https://github.com/Jeffallan/claude-skills) по [SKILLS_GUIDE](https://github.com/Jeffallan/claude-skills/blob/main/SKILLS_GUIDE.md)) или свой минимальный набор в репо
 - **дизайн** (сайты, презы, UI): единый skill с ограничениями палитры и типографики (например **5± цветов**, **2–3 шрифта**, иерархия, контраст, сетка) + ссылка на внешние гайды при необходимости ([vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills) — `web-design-guidelines` и смежное); не плодить второй «общий дизайн»-скилл, если этот покрывает задачу
 - **код-ревью**: уже есть агенты в плагинах (`superpowers` / `get-shit-done`); при необходимости добавить **один** отдельный skill под твой чеклист или подтянуть внешний ([Jeffallan/claude-skills](https://github.com/Jeffallan/claude-skills) — *Code Reviewer* в секции Quality), без дублирования двух процессов ревью в одном флоу
-- **ресерч в вебе**: не смешивать в один «скилл» то, что лучше делает **MCP** (поиск, браузер, fetch) — держать в `mcps/` и правилах агента; опционально skill только с *политикой* (когда браузер vs grep vs API)
+- **ресерч в вебе**: не смешивать в один «скилл» то, что лучше делает **MCP** (поиск, браузер, fetch) — держать в плагинах `plugins/mcp-*/` и правилах агента; опционально skill только с *политикой* (когда браузер vs grep vs API)
 - заменить skills для `pdf`, `excel`, `docx`, `pptx` (из-за лицензии в текущих)
 - добавить skills: **маркетолог** (отдельный пакет или раздел под продвижение; визуал — см. пункт дизайн выше)
 - собрать из **Telegram** всё, что должно жить в этом репо (промпты, правила, ссылки, чек-листы — по тому, что уже копилось в чатах; список уточнить по памяти/экспорту)

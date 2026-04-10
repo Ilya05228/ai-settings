@@ -1,0 +1,6 @@
+{
+  "schemaVersion": 1,
+  "name": "mcp-git",
+  "external": false,
+  "description": "MCP: git (uvx mcp-server-git)."
+}
