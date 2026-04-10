@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "name": "prompt-engineer",
+  "external": true,
+  "sync": {
+    "enabled": true,
+    "script": "sync.sh",
+    "copy": [
+      {
+        "from": "skills/prompt-engineer",
+        "to": "skills/prompt-engineer"
+      }
+    ]
+  },
+  "description": "Skill Prompt Engineer из [Jeffallan/claude-skills](https://github.com/Jeffallan/claude-skills) (промпты, оценка, structured outputs, guardrails). MIT.",
+  "source": {
+    "type": "git",
+    "url": "https://github.com/Jeffallan/claude-skills.git",
+    "ref": "main"
+  }
+}
