@@ -28,8 +28,8 @@ ai-settings: команды
     или имя каталога>. В SKILL.md в поле name записывается то же значение.
   - агенты: файл <плагин>-<name из YAML или stem>.md, поле name в шапке совпадает
     с именем файла (без .md).
-  - MCP: опциональный plugins/<name>/mcp.json — ровно один ключ в mcpServers
-    (один сервер на плагин; иначе install завершится с ошибкой).
+  - MCP: опциональный plugins/<name>/mcp.json — объект mcpServers (один или несколько
+    серверов на плагин, если нужно сгруппировать).
     В <dest>/mcp.json добавляются только новые имена серверов; существующие папки
     скиллов/файлы агентов/ключи MCP не перезаписываются — при любом совпадении
     install завершается с ошибкой до любых изменений (двухфазно).
@@ -257,9 +257,6 @@ def load_plugin_mcp_servers(base: Path) -> dict:
         return {}
     if not isinstance(servers, dict):
         raise SystemExit(f"{p}: mcpServers must be a JSON object")
-    if len(servers) > 1:
-        keys = ", ".join(sorted(servers))
-        raise SystemExit(f"{p}: expected exactly one MCP server per plugin (got {len(servers)}: {keys})")
     return servers
 
 

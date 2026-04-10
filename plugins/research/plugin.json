@@ -1,0 +1,6 @@
+{
+  "schemaVersion": 1,
+  "name": "mcp-research",
+  "external": false,
+  "description": "MCP: поиск и ресерч — Context7, DuckDuckGo, grep.app, Playwright; skill с алгоритмом выбора источника."
+}

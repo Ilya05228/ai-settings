@@ -26,14 +26,14 @@ bash ./commands install --dest ./.cursor --all
 # или перечислить вручную:
 bash ./commands install --dest ./.cursor --plugins docx,superpowers,mcp-git
 # каждый скилл — папка <плагин>-<name из YAML или каталога>; агенты — <плагин>-<name>.md
-# MCP — плагины вида mcp-context7, mcp-git, … (по одному серверу на плагин)
+# MCP — плагины plugins/mcp-*/ ; в одном mcp.json может быть несколько серверов (например mcp-research)
 ```
 
 ## Документация
 
 - список всех плагинов: `docs/PLUGINS.md` (генерится командой `./commands docs`)
 - документация по каждому плагину: `plugins/<name>/description.md`
-- MCP: отдельные плагины `plugins/mcp-*/` + кратко `mcps/README.md`
+- MCP: плагины `plugins/mcp-*/` (поиск/ресерч: `mcp-research`) + кратко `mcps/README.md`
 
 ## TODO
 
