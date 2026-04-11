@@ -1,0 +1,23 @@
+{
+  "skill_name": "clean-architecture",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Разложи новую фичу регистрации пользователя по Clean Architecture: хочу понять, что должно жить в domain, application, infrastructure и adapters, а что не должно попадать в ядро.",
+      "expected_output": "Явно разделяет фичу по слоям, описывает направление зависимостей и не тащит framework-детали в ядро.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "У меня сейчас use case напрямую дергает Spring repository, RestTemplate и пишет SQL-специфику в бизнес-логике. Покажи, как это перепроектировать по Clean Architecture через порты и адаптеры.",
+      "expected_output": "Выносит framework и infrastructure-зависимости за границы use case, описывает порты и адаптеры и сохраняет бизнес-логику внутри.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "Спроектируй интеграцию с внешним платёжным сервисом по Clean Architecture. Нужны use case, gateway interface, adapter implementation и объяснение, где должны проходить границы между слоями.",
+      "expected_output": "Проектирует use case, порт и adapter implementation с правильным разделением внутренних и внешних слоёв.",
+      "files": []
+    }
+  ]
+}

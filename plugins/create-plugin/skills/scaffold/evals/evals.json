@@ -1,0 +1,17 @@
+{
+  "skill_name": "scaffold",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Создай локальный плагин `weather-helper` в репозитории ai-settings: один skill, который по городу подсказывает, какие поля нужны пользователю для прогноза, без выдуманных API-ключей. Добавь plugin.json, description.md, evals с двумя сценариями.",
+      "expected_output": "Логика create-plugin: new-plugin, метаданные, SKILL.md, evals.json, make-docs и install.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "У меня уже есть папка plugins/foo с пустым skill. Допиши description в plugin.json и SKILL.md так, чтобы skill стабильно триггерился на фразы про «foo workflow» и «автоматизация foo», без смены имени папки.",
+      "expected_output": "Без повторного new-plugin; усилить description и триггеры (prompt-engineer); согласованность имён.",
+      "files": []
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "name": "create-plugin",
+  "external": false,
+  "description": "Плагин create-plugin: создаёт новые плагины в репозитории ai-settings по шаблону (интервью, триггеры, ./commands new-plugin, skills/agents/mcp, evals, make-docs). Используй при запросах «создай плагин», «create plugin», новый локальный плагин в plugins/, оформи plugin.json и description.md, скелет как у остальных плагинов.",
+  "sync": {
+    "enabled": false,
+    "script": "sync.sh"
+  }
+}

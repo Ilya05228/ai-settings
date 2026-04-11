@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "name": "programming-best-practices",
+  "external": false,
+  "description": "Локальный плагин с архитектурными практиками программирования: DDD и Clean Architecture. Подключай его, когда хочешь явно применять доменную модель, слои, границы зависимостей и другие архитектурные правила в текущей задаче.",
+  "sync": {
+    "enabled": false,
+    "script": "sync.sh"
+  }
+}
