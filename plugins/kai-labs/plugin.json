@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "name": "kai-labs",
+  "external": false,
+  "description": "Локальный плагин для лабораторных работ КАИ: уточнение задания, выбор артефактов, код по умолчанию на Python, отчет в DOCX по шаблону и пошаговое пояснение результата.",
+  "sync": {
+    "enabled": false,
+    "script": "sync.sh"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "skill_name": "response-language-selector",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Привет, помоги написать небольшую функцию на Python для подсчета медианы в списке чисел и коротко объясни решение. Код нужен простой, без лишней магии. /prompt-engineer-prompt-engineer /skill-creator-skill-creator",
+      "expected_output": "Игнорирует служебные хвосты, отвечает по-русски, пишет код на английском и, если добавляет комментарии, делает их на русском.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "I need a small Python example that reads a CSV file and prints the top 5 rows. Please also explain why using csv.DictReader is convenient. Можно без pandas.",
+      "expected_output": "Отвечает на английском, потому что основная задача сформулирована на английском, оставляет код на английском и комментарии тоже на английском.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "/research-information-research search docs /prompt-engineer-prompt-engineer Мне нужно объяснить на простом языке, как работает DFS, и показать маленький пример на Python. Сервисные штуки выше не учитывай, если ты их вообще видишь.",
+      "expected_output": "Не дает служебному шуму исказить решение, отвечает по-русски, а код и идентификаторы оставляет на английском.",
+      "files": []
+    }
+  ]
+}
