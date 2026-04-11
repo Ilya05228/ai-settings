@@ -1,0 +1,23 @@
+{
+  "skill_name": "ddd",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Спроектируй доменную модель для системы бронирования переговорных комнат по DDD. Хочу увидеть базовый ValueObject, базовый IdentifierInterface, LongIdentifier или UUIDIdentifier, потом конкретные id, потом Entity, Aggregate и Repository, а не просто набор DTO.",
+      "expected_output": "Строит явную иерархию базовых доменных типов: ValueObject, базовый id-контракт, конкретные id, Entity, Aggregate и Repository.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "У меня сейчас в доменной модели везде примитивы: String userId, String email, BigDecimal amount, Integer quantity. Перепроектируй это по DDD и замени сырые типы на осмысленные value objects и typed id. Хочу, чтобы методы тоже не принимали встроенные типы напрямую.",
+      "expected_output": "Заменяет примитивы на typed id и value objects с предметным смыслом, включая параметры методов, а не оставляет сырые строки и числа в домене.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "В проекте уже есть domain-common с базовыми типами ValueObject, IdentifierInterface, LongIdentifier, Entity, Aggregate и Repository. Добавь новую доменную сущность так, чтобы она встраивалась в этот каркас, а не создавала свою параллельную иерархию.",
+      "expected_output": "Опирается на уже существующий domain-common каркас и явно наследуется или реализует базовые доменные типы вместо создания дубликатов.",
+      "files": []
+    }
+  ]
+}
