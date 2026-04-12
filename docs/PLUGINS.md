@@ -12,7 +12,6 @@
 | `mcp-builder` | `true` | `https://github.com/anthropics/skills.git` | Навык для создания MCP-серверов из anthropics/skills. |
 | `mcp-git` | `false` |  | MCP: git (uvx mcp-server-git). |
 | `mcp-sequential-thinking` | `false` |  | MCP: sequential-thinking (@modelcontextprotocol/server-sequential-thinking). |
-| `mcp-time` | `false` |  | MCP: time (uvx mcp-server-time). |
 | `pdf` | `true` | `https://github.com/anthropics/skills.git` | Навык для работы с PDF из anthropics/skills. |
 | `pptx` | `true` | `https://github.com/anthropics/skills.git` | Навык для работы с PowerPoint (.pptx) из anthropics/skills. |
 | `programming-best-practices` | `false` |  | Локальный плагин с архитектурными практиками программирования: DDD и Clean Architecture. Подключай его, когда хочешь явно применять доменную модель, слои, границы зависимостей и другие архитектурные правила в текущей задаче. |
