@@ -13,12 +13,6 @@
         "@modelcontextprotocol/server-sequential-thinking"
       ]
     },
-    "time": {
-      "command": "uvx",
-      "args": [
-        "mcp-server-time"
-      ]
-    },
     "context7": {
       "command": "npx",
       "args": [
