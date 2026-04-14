@@ -14,7 +14,7 @@
 | `mcp-sequential-thinking` | `false` |  | MCP: sequential-thinking (@modelcontextprotocol/server-sequential-thinking). |
 | `pdf` | `true` | `https://github.com/anthropics/skills.git` | Навык для работы с PDF из anthropics/skills. |
 | `pptx` | `true` | `https://github.com/anthropics/skills.git` | Навык для работы с PowerPoint (.pptx) из anthropics/skills. |
-| `programming-best-practices` | `false` |  | Локальный плагин с архитектурными практиками программирования: DDD и Clean Architecture. Подключай его, когда хочешь явно применять доменную модель, слои, границы зависимостей и другие архитектурные правила в текущей задаче. |
+| `programming-best-practices` | `false` |  | Локальный плагин: архитектурные практики (DDD, Clean Architecture, доменные события) и Java best practices. Подключай для доменной модели, слоёв, границ зависимостей, а также когда пишешь или правишь Java-код — в том числе без явной формулировки «best practices». |
 | `prompt-engineer` | `true` | `https://github.com/Jeffallan/claude-skills.git` | Skill Prompt Engineer из [Jeffallan/claude-skills](https://github.com/Jeffallan/claude-skills) (промпты, оценка, structured outputs, guardrails). MIT. |
 | `mcp-research` | `false` |  | MCP: поиск и ресерч — Context7, DuckDuckGo, grep.app, Playwright; skill с алгоритмом выбора источника. |
 | `response-language` | `false` |  | Локальный плагин для автоматического выбора языка ответа, если пользователь явно его не указал: язык определяется по доминирующему языку самой задачи, при этом код остается на английском, а комментарии пишутся на выбранном языке ответа. |

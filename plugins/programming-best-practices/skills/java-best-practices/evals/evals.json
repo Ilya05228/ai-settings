@@ -1,0 +1,23 @@
+{
+  "skill_name": "java",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Напиши на Java immutable value object Money с полями currency (ISO код) и amount (BigDecimal). Нужны equals/hashCode, toString.",
+      "expected_output": "Явные поля, ручной конструктор (или фабрика), без Lombok @Value/@Data; equals/hashCode/toString явно или аккуратно согласованы с контрактом.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "В Spring-сервисе есть класс с @RequiredArgsConstructor и Lombok — перепиши на обычный Java с ручным конструктором и явными зависимостями в полях.",
+      "expected_output": "Убирает Lombok-конструктор, добавляет явный конструктор и поля; стиль совместим с типичным Spring без @RequiredArgsConstructor.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "Добавь в существующий Java-класс новое обязательное поле String traceId и обнови создание объектов в тестах — только Java, без Lombok.",
+      "expected_output": "Расширяет конструктор/фабрику вручную, обновляет call sites без @AllArgsConstructor и без магии Lombok.",
+      "files": []
+    }
+  ]
+}

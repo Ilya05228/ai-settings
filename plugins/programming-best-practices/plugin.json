@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "name": "programming-best-practices",
   "external": false,
-  "description": "Локальный плагин с архитектурными практиками программирования: DDD и Clean Architecture. Подключай его, когда хочешь явно применять доменную модель, слои, границы зависимостей и другие архитектурные правила в текущей задаче.",
+  "description": "Локальный плагин: архитектурные практики (DDD, Clean Architecture, доменные события) и Java best practices. Подключай для доменной модели, слоёв, границ зависимостей, а также когда пишешь или правишь Java-код — в том числе без явной формулировки «best practices».",
   "sync": {
     "enabled": false,
     "script": "sync.sh"

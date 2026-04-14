@@ -17,7 +17,9 @@ ai-settings: команды
   ./commands make-docs
   ./commands new-plugin <name>
   ./commands install --dest <path> --plugins a,b,c
+  ./commands install --dest <path> --plugins a,b,c --force
   ./commands install --dest <path> --all
+  ./commands install --dest <path> --all --force
 
 Примечания:
   - метаданные плагина: plugins/<name>/plugin.json
@@ -30,9 +32,12 @@ ai-settings: команды
     с именем файла (без .md).
   - MCP: опциональный plugins/<name>/mcp.json — объект mcpServers (один или несколько
     серверов на плагин, если нужно сгруппировать).
-    В <dest>/mcp.json добавляются только новые имена серверов; существующие папки
-    скиллов/файлы агентов/ключи MCP не перезаписываются — при любом совпадении
-    install завершается с ошибкой до любых изменений (двухфазно).
+    По умолчанию в <dest>/mcp.json добавляются только новые имена серверов;
+    существующие папки скиллов/файлы агентов/ключи MCP не перезаписываются —
+    при любом совпадении install завершается с ошибкой до любых изменений (двухфазно).
+    С флагом --force проверки на уже существующие skill/agent/MCP-ключи отключаются:
+    каталоги скиллов удаляются и копируются заново, файлы агентов перезаписываются,
+    конфиги MCP с совпадающими именами серверов перезаписываются значениями из устанавливаемых плагинов.
   - --all: ставит все каталоги из plugins/ с plugin.json, кроме _base.
 EOF
 }
@@ -163,11 +168,13 @@ install_to() {
   local dest=""
   local plugins=""
   local use_all=0
+  local force=0
   while [[ $# -gt 0 ]]; do
     case "$1" in
       --dest) dest="${2:-}"; shift 2;;
       --plugins) plugins="${2:-}"; shift 2;;
       --all) use_all=1; shift;;
+      --force) force=1; shift;;
       *) die "Unknown arg: $1";;
     esac
   done
@@ -195,7 +202,7 @@ install_to() {
 
   mkdir -p "$dest/skills" "$dest/agents"
 
-  python3 - "$ROOT" "$dest" "$plugins" <<'PY'
+  python3 - "$ROOT" "$dest" "$plugins" "$force" <<'PY'
 import json
 import re
 import shutil
@@ -205,6 +212,7 @@ from pathlib import Path
 ROOT = Path(sys.argv[1]).resolve()
 dest_root = Path(sys.argv[2]).resolve()
 plugins_csv = sys.argv[3]
+force = sys.argv[4] == "1"
 
 FM_RE = re.compile(r"\A---\n([\s\S]*?)\n---\n([\s\S]*)\Z")
 
@@ -322,7 +330,7 @@ def plan_agent_targets(plugin: str, base: Path) -> list[tuple[str, Path]]:
     return out
 
 
-def collect_conflicts(dest_root: Path, plugins: list[str]) -> list[str]:
+def collect_conflicts(dest_root: Path, plugins: list[str], force: bool) -> list[str]:
     conflicts: list[str] = []
     dest_skills = dest_root / "skills"
     dest_agents = dest_root / "agents"
@@ -358,32 +366,33 @@ def collect_conflicts(dest_root: Path, plugins: list[str]) -> list[str]:
             conflicts.append(f"internal: duplicate agent target {bn!r} (plugin {plugin!r})")
         seen_a.add(bn)
 
-    for plugin, dest_name in all_skill_names:
-        p = dest_skills / dest_name
-        if p.exists():
-            rel = p.relative_to(dest_root)
-            conflicts.append(
-                f"skill folder already exists: {rel} (would install from plugin {plugin!r})"
-            )
+    if not force:
+        for plugin, dest_name in all_skill_names:
+            p = dest_skills / dest_name
+            if p.exists():
+                rel = p.relative_to(dest_root)
+                conflicts.append(
+                    f"skill folder already exists: {rel} (would install from plugin {plugin!r})"
+                )
 
-    for plugin, dest_bn in all_agent_names:
-        p = dest_agents / dest_bn
-        if p.exists():
-            rel = p.relative_to(dest_root)
-            conflicts.append(
-                f"agent file already exists: {rel} (would install from plugin {plugin!r})"
-            )
+        for plugin, dest_bn in all_agent_names:
+            p = dest_agents / dest_bn
+            if p.exists():
+                rel = p.relative_to(dest_root)
+                conflicts.append(
+                    f"agent file already exists: {rel} (would install from plugin {plugin!r})"
+                )
 
-    for key, owner in batch_mcp_owner.items():
-        if key in existing_mcp:
-            conflicts.append(
-                f"MCP server {key!r} already in mcp.json (would add from plugin {owner!r})"
-            )
+        for key, owner in batch_mcp_owner.items():
+            if key in existing_mcp:
+                conflicts.append(
+                    f"MCP server {key!r} already in mcp.json (would add from plugin {owner!r})"
+                )
 
     return conflicts
 
 
-def apply_install(dest_root: Path, plugins: list[str]) -> None:
+def apply_install(dest_root: Path, plugins: list[str], force: bool) -> None:
     dest_skills = dest_root / "skills"
     dest_agents = dest_root / "agents"
     full_doc, existing_servers = read_dest_mcp(dest_root)
@@ -395,6 +404,11 @@ def apply_install(dest_root: Path, plugins: list[str]) -> None:
         print(f"== {plugin} ==")
         for dest_name, root in plan_skill_targets(plugin, base):
             dd = dest_skills / dest_name
+            if dd.exists():
+                if force:
+                    shutil.rmtree(dd)
+                else:
+                    raise RuntimeError(f"unexpected existing skill dir: {dd}")
             shutil.copytree(root, dd, symlinks=True)
             out = dd / "SKILL.md"
             out.write_text(merge_frontmatter(out.read_text(encoding="utf-8"), dest_name), encoding="utf-8")
@@ -431,14 +445,14 @@ for plugin in plugin_list:
         print(f"No such plugin dir: {plugin}", file=sys.stderr)
         sys.exit(1)
 
-conflicts = collect_conflicts(dest_root, plugin_list)
+conflicts = collect_conflicts(dest_root, plugin_list, force)
 if conflicts:
     print("Install aborted: conflicts (nothing was changed):", file=sys.stderr)
     for c in conflicts:
         print(f"  - {c}", file=sys.stderr)
     sys.exit(1)
 
-apply_install(dest_root, plugin_list)
+apply_install(dest_root, plugin_list, force)
 PY
 }
 
